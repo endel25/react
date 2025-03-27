@@ -64,7 +64,19 @@ function AppointmentForm() {
     return error
   }
 
-  const handleChange = (e) => {
+  const checkEmailExists = async (email) => {
+    try {
+      const response = await axios.get('http://192.168.3.74:3001/appointment/check-email', {
+        params: { email },
+      })
+      return response.data.exists
+    } catch (error) {
+      console.error('Error checking email:', error)
+      return false // Assume email doesn't exist if check fails
+    }
+  }
+
+  const handleChange = async (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
@@ -74,6 +86,17 @@ function AppointmentForm() {
     const error = validateField(name, value)
     setErrors((prev) => ({ ...prev, [name]: error }))
 
+    // Check email existence when visitorEmail changes
+    if (name === 'visitorEmail' && value) {
+      const emailExists = await checkEmailExists(value)
+      if (emailExists) {
+        setErrors((prev) => ({
+          ...prev,
+          visitorEmail: 'This email is already associated with an appointment.',
+        }))
+      }
+    }
+
     // Revalidate allocatedTime when date changes
     if (name === 'date' && formData.allocatedTime) {
       const timeError = validateField('allocatedTime', formData.allocatedTime)
@@ -81,12 +104,21 @@ function AppointmentForm() {
     }
   }
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors = {}
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key])
       if (error) newErrors[key] = error
     })
+
+    // Check email existence before submission
+    if (formData.visitorEmail) {
+      const emailExists = await checkEmailExists(formData.visitorEmail)
+      if (emailExists) {
+        newErrors.visitorEmail = 'This email is already associated with an appointment.'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -97,7 +129,7 @@ function AppointmentForm() {
     setSuccessMessage('')
     setErrorMessage('')
 
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       setErrorMessage('Please fix all errors before submitting.')
       setLoading(false)
       return

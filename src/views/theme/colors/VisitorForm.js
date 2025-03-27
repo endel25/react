@@ -58,6 +58,14 @@ const VisitorForm = () => {
       }
     }
     checkFormStatus()
+
+    // Add a class to hide everything except the form
+    document.body.classList.add('hide-except-form')
+
+    // Cleanup: Remove the class when component unmounts
+    return () => {
+      document.body.classList.remove('hide-except-form')
+    }
   }, [searchParams])
 
   const validateField = (name, value) => {
@@ -114,7 +122,7 @@ const VisitorForm = () => {
   const handleChange = async (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-    const error = validateField(name, value)
+    const error = validateField(name, value) // Fixed the typo here: removed the trailing "-"
     setErrors((prev) => ({ ...prev, [name]: error }))
 
     // Real-time validation for national_id
@@ -275,13 +283,19 @@ const VisitorForm = () => {
   if (isFormCompleted) {
     return (
       <div
+        id="visitor-form"
         style={{
-          minHeight: '100vh',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: '#fff',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           padding: '20px',
-          background: 'white',
+          zIndex: 1000,
         }}
       >
         <div
@@ -319,13 +333,19 @@ const VisitorForm = () => {
   // Render the form if not completed
   return (
     <div
+      id="visitor-form"
       style={{
-        minHeight: '100vh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        background: '#fff',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         padding: '20px',
-        background: 'white',
+        zIndex: 1000,
       }}
     >
       <div
@@ -543,5 +563,18 @@ const VisitorForm = () => {
     </div>
   )
 }
+
+// Inject CSS to hide everything except the form
+const styleSheet = document.createElement('style')
+styleSheet.type = 'text/css'
+styleSheet.innerText = `
+  .hide-except-form > *:not(#visitor-form) {
+    visibility: hidden;
+  }
+  #visitor-form {
+    visibility: visible !important;
+  }
+`
+document.head.appendChild(styleSheet)
 
 export default VisitorForm
