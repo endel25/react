@@ -36,7 +36,7 @@ const App = () => {
 
   useEffect(() => {
     axios
-      .get('http://localhost:3000/users/message')
+      .get('http://192.168.3.74:3000/users/message')
       .then((response) => setMessage(response.data.message))
       .catch((error) => console.error('Error fetching data:', error))
   }, [])

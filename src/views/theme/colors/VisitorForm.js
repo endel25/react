@@ -18,10 +18,10 @@ const VisitorForm = () => {
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState('') // To track success state
+  const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [showPhotoOptions, setShowPhotoOptions] = useState(false)
-  const [isFormCompleted, setIsFormCompleted] = useState(false) // Tracks if form is already submitted
+  const [isFormCompleted, setIsFormCompleted] = useState(false)
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
 
@@ -42,7 +42,6 @@ const VisitorForm = () => {
     }
     setFormData((prev) => ({ ...prev, ...initialData }))
 
-    // Check if the form has already been submitted
     const checkFormStatus = async () => {
       try {
         const response = await axios.get('http://192.168.3.74:3001/appointment/check-status', {
@@ -112,11 +111,32 @@ const VisitorForm = () => {
     return error
   }
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     const error = validateField(name, value)
     setErrors((prev) => ({ ...prev, [name]: error }))
+
+    // Real-time validation for national_id
+    if (name === 'national_id' && value && !error) {
+      try {
+        const response = await axios.get('http://192.168.3.74:3001/appointment/check-national-id', {
+          params: { national_id: value },
+        })
+        if (response.data.exists) {
+          setErrors((prev) => ({
+            ...prev,
+            national_id: 'This National ID is already used for another appointment.',
+          }))
+        }
+      } catch (error) {
+        console.error('Error checking national_id:', error)
+        setErrors((prev) => ({
+          ...prev,
+          national_id: 'Failed to validate National ID. Please try again.',
+        }))
+      }
+    }
   }
 
   const handleFileChange = (e) => {
@@ -143,7 +163,7 @@ const VisitorForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Check if form is already submitted before proceeding
+    // Check if form is already submitted for this email, date, and time
     try {
       const response = await axios.get('http://192.168.3.74:3001/appointment/check-status', {
         params: {
@@ -167,6 +187,27 @@ const VisitorForm = () => {
       return
     }
 
+    // Additional check for national_id before submission
+    if (formData.national_id) {
+      try {
+        const response = await axios.get('http://192.168.3.74:3001/appointment/check-national-id', {
+          params: { national_id: formData.national_id },
+        })
+        if (response.data.exists) {
+          setErrors((prev) => ({
+            ...prev,
+            national_id: 'This National ID is already used for another appointment.',
+          }))
+          setErrorMessage('This National ID is already used for another appointment.')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking national_id before submission:', error)
+        setErrorMessage('Failed to validate National ID. Please try again.')
+        return
+      }
+    }
+
     setLoading(true)
     setSuccessMessage('')
     setErrorMessage('')
@@ -188,7 +229,7 @@ const VisitorForm = () => {
       )
       console.log('Server response:', response.data)
       setSuccessMessage('Your Appointment Scheduled Successfully')
-      setIsFormCompleted(true) // Show success message and hide form
+      setIsFormCompleted(true)
       setFormData({
         firstName: '',
         lastName: '',
@@ -207,6 +248,12 @@ const VisitorForm = () => {
       const errorMsg =
         error.response?.data?.message || 'Failed to process request. Please try again.'
       setErrorMessage(errorMsg)
+      if (error.response?.data?.message.includes('National ID')) {
+        setErrors((prev) => ({
+          ...prev,
+          national_id: error.response.data.message,
+        }))
+      }
     } finally {
       setLoading(false)
     }
@@ -380,9 +427,7 @@ const VisitorForm = () => {
               <div
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               >
-                <label
-                  style={{ fontWeight: 'bold', fontSize: '1rem', color: '#333', width: '40%' }}
-                >
+                <label style={{ fontWeight: 'bold', fontSize: '1rem', color: '333', width: '40%' }}>
                   Photo
                 </label>
                 <div style={{ flex: 1 }}>
