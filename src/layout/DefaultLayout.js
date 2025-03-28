@@ -1,7 +1,15 @@
 import React from 'react'
 import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
+import { useNavigate } from 'react-router-dom'
 
 const DefaultLayout = () => {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    navigate('/login')
+  }
+
   return (
     <div>
       <AppSidebar />
@@ -11,6 +19,9 @@ const DefaultLayout = () => {
           <AppContent />
         </div>
         <AppFooter />
+        <button onClick={handleLogout} className="btn btn-danger m-3">
+          Logout
+        </button>
       </div>
     </div>
   )

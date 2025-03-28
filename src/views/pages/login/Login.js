@@ -16,7 +16,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
-import Swal from 'sweetalert2' // Import SweetAlert2
+import Swal from 'sweetalert2'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -32,19 +32,17 @@ const Login = () => {
         password,
       })
       localStorage.setItem('token', response.data.access_token)
-      // Replace alert with SweetAlert2
       await Swal.fire({
         icon: 'success',
         title: 'Login Successful!',
         text: 'You have been successfully logged in.',
         confirmButtonText: 'OK',
-        timer: 3000, // Auto-close after 3 seconds (optional)
-        timerProgressBar: true, // Show progress bar (optional)
+        timer: 3000,
+        timerProgressBar: true,
       })
-      navigate('/home') // Redirect to home page after successful login
+      navigate('/dashboard')
     } catch (err) {
       setError('Invalid email or password')
-      // Optional: Show error with SweetAlert2
       await Swal.fire({
         icon: 'error',
         title: 'Login Failed',
